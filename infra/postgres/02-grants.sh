@@ -1,0 +1,22 @@
+#!/bin/sh
+set -eu
+echo "[initdb] Applying grants and default privileges..."
+
+psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-SQL
+  ALTER SCHEMA public OWNER TO "$POSTGRES_USER";
+
+  GRANT USAGE ON SCHEMA public TO app_user, auditor, admin;
+
+  GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO app_user;
+  GRANT SELECT ON ALL TABLES IN SCHEMA public TO auditor;
+  GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO admin;
+
+  GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO app_user, auditor, admin;
+
+  ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO app_user;
+  ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO auditor;
+  ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO admin;
+  ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT USAGE, SELECT ON SEQUENCES TO app_user, auditor, admin;
+SQL
+
+echo "[initdb] Grants applied."
